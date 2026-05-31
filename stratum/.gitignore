@@ -1,0 +1,12 @@
+# temp
+*.o
+*.d
+
+# editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# outputs
+devices/*/out/

@@ -1,0 +1,22 @@
+#!/system/bin/sh
+mkdir -p /data/local/tmp/stratum
+LOG=/data/local/tmp/stratum/boot.log
+> $LOG
+
+echo "$(date) stratum-boot started" >> $LOG
+echo "uptime: $(cat /proc/uptime)" >> $LOG
+echo "pid: $$" >> $LOG
+echo "uid: $(id)" >> $LOG
+
+# stage 2 - ready
+echo 100 > /sys/class/timed_output/vibrator/enable
+sleep 0.3
+echo 100 > /sys/class/timed_output/vibrator/enable
+
+echo "$(date) launching stratum_binary" >> $LOG
+
+LD_PRELOAD=/system/lib64/stub.so \
+LD_LIBRARY_PATH=/system/lib64:/vendor/lib64 \
+/system/bin/stratum_binary >> $LOG 2>&1
+
+echo "$(date) stratum_binary exited $?" >> $LOG

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>boot-menu — Stratum Boot Menu</title>
+<style>
+  :root {
+    --accent: #4a9eff;
+    --accent2: #3ddc84;
+    --bg: #080b10;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: #e0e6f0;
+    --muted: #5a6478;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(74,158,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,158,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .bg-glow {
+    position: fixed; z-index: 0; pointer-events: none;
+    width: 600px; height: 600px; border-radius: 50%;
+    filter: blur(120px); opacity: 0.10;
+  }
+  .bg-glow-1 { top: -200px; left: -100px; background: var(--accent); }
+  .bg-glow-2 { bottom: -200px; right: -100px; background: var(--accent2); }
+
+  .wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(8,11,16,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-size: 1rem; font-weight: 700; letter-spacing: 0.08em; color: var(--accent); text-transform: uppercase; }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.875rem; transition: color .2s; }
+  .nav-links a:hover { color: var(--text); }
+
+  .hero { padding: 80px 0 60px; text-align: center; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(74,158,255,0.08); border: 1px solid rgba(74,158,255,0.18);
+    border-radius: 100px; padding: 5px 14px; font-size: 0.75rem;
+    color: var(--accent); margin-bottom: 28px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .hero-badge span {
+    width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+
+  h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -0.02em; }
+  h1 .grad { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero-sub { font-size: 1.05rem; color: var(--muted); max-width: 540px; margin: 0 auto 40px; line-height: 1.75; }
+  .hero-sub a { color: var(--accent); text-decoration: none; }
+
+  .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 22px; border-radius: 9px; font-size: 0.9rem;
+    font-weight: 600; text-decoration: none; transition: all .2s; cursor: pointer; border: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 0 24px rgba(74,158,255,0.25); }
+  .btn-primary:hover { background: #6ab3ff; box-shadow: 0 0 32px rgba(74,158,255,0.4); transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); transform: translateY(-1px); }
+
+  .screenshot-wrap {
+    margin: 52px 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 3px; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  }
+  .screenshot-wrap img { width: 100%; border-radius: 15px; display: block; }
+  .screenshot-placeholder {
+    width: 100%; aspect-ratio: 9/5;
+    background: rgba(74,158,255,0.03);
+    border-radius: 15px; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  section { padding: 56px 0; }
+  .section-label { font-size: 0.7rem; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  h2 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; margin-bottom: 14px; letter-spacing: -0.01em; }
+  .section-sub { color: var(--muted); font-size: 0.95rem; line-height: 1.75; max-width: 580px; margin-bottom: 36px; }
+  .section-sub a { color: var(--accent); text-decoration: none; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px; transition: all .2s;
+  }
+  .card:hover { border-color: rgba(74,158,255,0.25); transform: translateY(-2px); background: rgba(255,255,255,0.05); }
+  .card-num { font-size: 0.7rem; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
+  .card p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+
+  #devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .device-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; text-decoration: none; color: var(--text);
+    transition: all .2s; display: flex; flex-direction: column; gap: 10px;
+  }
+  .device-card:hover { border-color: rgba(61,220,132,0.35); transform: translateY(-2px); background: rgba(255,255,255,0.05); }
+  .device-name { font-weight: 600; font-size: 0.95rem; }
+  .device-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(61,220,132,0.08); border: 1px solid rgba(61,220,132,0.18);
+    color: var(--accent2); font-size: 0.7rem; padding: 2px 9px; border-radius: 100px;
+    letter-spacing: 0.05em;
+  }
+  .device-dl { font-size: 0.78rem; color: var(--muted); margin-top: auto; }
+  .device-loading { color: var(--muted); font-size: 0.88rem; padding: 16px 0; }
+
+  .add-device-card {
+    background: rgba(74,158,255,0.03); border: 1px dashed rgba(74,158,255,0.22);
+    border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column;
+    gap: 8px; text-decoration: none; color: var(--text); transition: all .2s;
+  }
+  .add-device-card:hover { border-color: rgba(74,158,255,0.45); background: rgba(74,158,255,0.07); }
+  .add-label { font-weight: 600; font-size: 0.92rem; }
+  .add-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+
+  .code-block {
+    background: rgba(0,0,0,0.45); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 24px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.83rem; line-height: 2; overflow-x: auto; margin: 16px 0;
+    white-space: pre;
+  }
+  .code-block .c { color: var(--muted); }
+  .code-block .k { color: var(--accent); }
+  .code-block .s { color: var(--accent2); }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+  footer {
+    border-top: 1px solid var(--border); padding: 28px 0;
+    text-align: center; color: var(--muted); font-size: 0.82rem;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  @media (max-width: 600px) {
+    .hero { padding: 48px 0 36px; }
+    .hero-btns { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<nav>
+  <div class="wrap">
+    <div class="nav-logo">boot-menu</div>
+    <div class="nav-links">
+      <a href="#devices">Devices</a>
+      <a href="#install">Install</a>
+      <a href="#add-device">Add Device</a>
+      <a href="https://github.com/BroBordd/boot-menu" target="_blank">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-badge"><span></span> KernelSU · Magisk</div>
+    <h1>A bare-metal<br><span class="grad">boot menu</span> for Android</h1>
+    <p class="hero-sub">
+      Runs before the Android framework starts. Native OpenGL ES 2.0 overlay via SurfaceFlinger,
+      raw evdev input, no JVM.       Built on <a href="https://brobordd.github.io/stratum">Stratum</a>.
+    </p>
+    <div class="hero-btns">
+      <a href="#devices" class="btn btn-primary">Download for your device</a>
+      <a href="https://github.com/BroBordd/boot-menu" target="_blank" class="btn btn-ghost">View on GitHub</a>
+    </div>
+
+    <div class="screenshot-wrap">
+      <img src="https://github.com/user-attachments/assets/07c84df3-df0b-45ab-9b35-8c32846863a0"
+           alt="boot-menu screenshot"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="screenshot-placeholder" style="display:none">screenshot</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-label">Overview</div>
+    <h2>What it does</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-num">01</div>
+        <h3>Pre-framework launch</h3>
+        <p>Hooks into early boot via post-fs-data. Starts before Android and exits cleanly when dismissed.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">02</div>
+        <h3>Native rendering</h3>
+        <p>Fullscreen OpenGL ES 2.0 surface at INT_MAX layer. 60fps, no framework, no JVM.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">03</div>
+        <h3>Hardware input</h3>
+        <p>Raw evdev. Volume keys to navigate, power to confirm. Full touch support via MT Protocol.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">04</div>
+        <h3>Boot actions</h3>
+        <p>System, reboot, recovery, download mode, power off — all with confirmation dialogs.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">05</div>
+        <h3>Boot status</h3>
+        <p>Animated progress indicator while Android boots in background. Updates when ready.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">06</div>
+        <h3>Extras</h3>
+        <p>Drop any Stratum-based binary into <code style="color:var(--accent2);font-size:0.82em">extras/</code> and it appears in the Advanced menu.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <section id="devices">
+    <div class="section-label">Downloads</div>
+    <h2>Supported devices</h2>
+    <p class="section-sub">Select your device to download the latest release zip. Flash via KernelSU or Magisk.</p>
+    <div id="devices-grid">
+      <div class="device-loading">Loading releases…</div>
+    </div>
+  </section>
+
+  <hr>
+
+  <section id="install">
+    <div class="section-label">Installation</div>
+    <h2>Getting started</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-num">01</div>
+        <h3>Download</h3>
+        <p>Grab the zip for your device from the section above.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">02</div>
+        <h3>Flash</h3>
+        <p>Open KernelSU Manager or Magisk, go to Modules, and install from storage.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">03</div>
+        <h3>Reboot</h3>
+        <p>The menu appears on next boot before the Android framework starts.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <section id="add-device">
+    <div class="section-label">Development</div>
+    <h2>Adding a device</h2>
+    <p class="section-sub">
+      Support is device-specific. Adding a new device requires forking
+      <a href="https://brobordd.github.io/stratum">Stratum</a> and providing a device configuration.
+    </p>
+
+    <div class="code-block"><span class="c"># clone with submodules</span>
+<span class="k">git clone</span> <span class="s">--recurse-submodules https://github.com/BroBordd/boot-menu</span>
+<span class="k">cd</span> <span class="s">boot-menu</span>
+
+<span class="c"># add your device to Stratum</span>
+<span class="c"># stratum/devices/&lt;model&gt;/StratumConfig.h     — input paths, touch ranges, orientation</span>
+<span class="c"># stratum/devices/&lt;model&gt;/app.cpp             — entry point (copy from src/default.cpp)</span>
+<span class="c"># stratum/devices/&lt;model&gt;/stratum-boot/       — module source</span>
+
+<span class="c"># build</span>
+<span class="k">bash</span> <span class="s">scripts/build.sh &lt;model&gt;</span>
+
+<span class="c"># output</span>
+<span class="c"># stratum/devices/&lt;model&gt;/out/&lt;model&gt;-boot-menu.zip</span></div>
+
+    <a href="https://brobordd.github.io/stratum#devices" target="_blank" class="btn btn-ghost" style="margin-top:12px">
+      Full documentation
+    </a>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>Copyright &copy; 2026 BrotherBoard &nbsp;&middot;&nbsp; <a href="https://github.com/BroBordd/boot-menu/blob/main/LICENSE">GPLv3</a> &nbsp;&middot;&nbsp; Built on <a href="https://brobordd.github.io/stratum">Stratum</a> &nbsp;&middot;&nbsp; <a href="https://t.me/BroBordd">@BroBordd</a></p>
+  </div>
+</footer>
+
+<script>
+const REPO = 'BroBordd/boot-menu';
+
+async function loadDevices() {
+  const grid = document.getElementById('devices-grid');
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/releases`);
+    const releases = await res.json();
+
+    const devices = {};
+    for (const release of releases) {
+      for (const asset of release.assets || []) {
+        if (!asset.name.endsWith('.zip')) continue;
+        const match = asset.name.match(/^(.+)-boot-menu\.zip$/);
+        if (!match) continue;
+        const model = match[1];
+        if (!devices[model]) {
+          devices[model] = {
+            name: model,
+            url: asset.browser_download_url,
+            size: (asset.size / 1024 / 1024).toFixed(1) + ' MB',
+            tag: release.tag_name,
+          };
+        }
+      }
+    }
+
+    const keys = Object.keys(devices);
+    grid.innerHTML = '';
+
+    if (keys.length === 0) {
+      grid.innerHTML = '<div class="device-loading">No releases found. <a href="https://github.com/' + REPO + '/releases" style="color:var(--accent)">Check GitHub</a></div>';
+    } else {
+      for (const key of keys) {
+        const d = devices[key];
+        const card = document.createElement('a');
+        card.className = 'device-card';
+        card.href = d.url;
+        card.innerHTML = `
+          <div class="device-name">${d.name}</div>
+          <div class="device-tag">${d.tag}</div>
+          <div class="device-dl">${d.size}</div>
+        `;
+        grid.appendChild(card);
+      }
+    }
+
+    const add = document.createElement('a');
+    add.className = 'add-device-card';
+    add.href = '#add-device';
+    add.innerHTML = `
+      <div class="add-label">Add your device</div>
+      <div class="add-sub">Fork the repo and provide a StratumConfig.h for your hardware.</div>
+    `;
+    grid.appendChild(add);
+
+  } catch(e) {
+    grid.innerHTML = '<div class="device-loading">Failed to load. <a href="https://github.com/' + REPO + '/releases" style="color:var(--accent)">View releases on GitHub</a></div>';
+  }
+}
+
+loadDevices();
+</script>
+</body>
+</html>

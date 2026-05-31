@@ -1,0 +1,6 @@
+id=bootmgr
+name=Boot Manager
+version=v1.0
+versionCode=1
+author=BrotherBoard
+description=A hacky boot manager built on Stratum.
