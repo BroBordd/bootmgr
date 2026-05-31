@@ -1,6 +1,6 @@
 # bootmgr
 
-A hacky boot manager for rooted Android devices, built on top of [Stratum](https://github.com/BroBordd/stratum). Runs before the Android framework starts, giving you full control over the boot process right from power-on.
+A hacky boot manager for rooted Android devices, built on top of [Stratum](https://BroBordd.github.io/stratum). Runs before the Android framework starts, giving you full control over the boot process right from power-on.
 
 ## Features
 
